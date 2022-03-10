@@ -1,120 +1,331 @@
+
+
+
 /**
+ *
  * bar.js
  * simple, elegant bar chart library
- * 23/02/2022 - version 1.0
- * repo url
- * 
- * Copyright 2022 Mike Field-May
- * released under the MIT License
+ * {date} - version 1.0
+ * {url}
+ *
+ * Copyright 2017 {your name}
+ * Relased under the MIT License
  * {license url}
+ *
  */
 
-'use strict';
+ 'use strict';
 
-function BarChart(targetId, width, height, data )  {
-    // Base
-    var chart = this;
-    // Specify Configurations
-    chart.configureChart(targetId, width, height, data);
-
-    // Pre Operations
-    chart.performPreOperations();
-}
-
-BarChart.prototype.configureChart = function(targetId, width, height, data) {
-    var chart = this;
-
-    // Chart Specifications
-    chart.setCanvasParameters(targetId, width, height, data)
-
+ function BarChart(targetId, width, height, data){
+     // Base
+     var chart = this;
+ 
+     // Specify Configurations
+     chart.configureChart(targetId, width, height, data);
+ 
+     // Pre Operations
+     chart.performPreOperations();
+ 
+     // Draw Chart
+     chart.drawChart();
+ }
+ 
+ BarChart.prototype.configureChart = function (targetId, width, height, data) {
+   // Base
+   var chart = this;
+ 
+   // Global Canvas Specifications
+   chart.setCanvasParameters(targetId, width, height, data);
+ 
+   // Global Chart Specifications
    chart.setChartParameters();
+ 
+ };
+ 
+ BarChart.prototype.setCanvasParameters = function (targetId, width, height, data) {
+   // Base
+   var chart = this;
+ 
+   // Canvas Specifications come from outside
+   chart.id = targetId;
+   chart.width = width;
+   chart.height = height;
+   chart.data = data;
+ };
+ 
+ BarChart.prototype.setChartParameters = function () {
+   // Base
+   var chart = this;
+ 
+   // Axis Configurations
+   chart.axisRatio = 10; // in terms of percentage
+   chart.verticalMargin = (chart.height * chart.axisRatio) / 100;
+   chart.horizontalMargin = (chart.width * chart.axisRatio) / 100;
+   chart.axisColor = '#b1b1b1';
+   chart.axisWidth = 0.75;
+ 
+   // Label Configurations
+   chart.fontRatio = 3; // in terms of percentage
+   chart.fontFamily = 'times';
+   chart.fontStyle = 'normal';
+   chart.fontWeight = '300';
+   chart.fontColor = '#666';
+   chart.verticalFontSize = (chart.height * chart.fontRatio) / 100;
+   chart.horizontalFontSize = (chart.width * chart.fontRatio) / 100;
+ 
+   // Guideline Configurations
+   chart.guidelineColor = '#e5e5e5';
+   chart.guidelineWidth = 0.5;
+ };
+ 
+ BarChart.prototype.performPreOperations = function () {
+   // Base
+   var chart = this;
+ 
+   // Create Canvas
+   chart.createCanvas();
+ 
+   // Get data
+   chart.handleData();
+ 
+   // Prepare data
+   chart.preapareData();
+ 
+ };
+ 
+ BarChart.prototype.createCanvas = function () {
+   // Base
+   var chart = this;
+ 
+   // Create Canvas
+   var canvas = document.createElement('canvas');
+   canvas.id = chart.id + '-' + Math.random();
+   canvas.width = chart.width;
+   canvas.height = chart.height;
+ 
+   // Append canvas to target container
+   document.getElementById(chart.id).innerHTML = ''; // clean container
+   document.getElementById(chart.id).appendChild(canvas); // add canvas to clean container
+ 
+   // Add canvas to chart object
+   chart.canvas = canvas;
+   chart.context = canvas.getContext('2d');
+ };
+ 
+ BarChart.prototype.handleData = function (){
+   // Base
+   var chart = this;
+ 
+   // Data sets
+   chart.labels = [];
+   chart.values = [];
+ 
+   // Handle Data
+   chart.data.forEach(function(item){
+     chart.labels.push(item.label);
+     chart.values.push(item.value);
+   });
+ };
+ 
+ BarChart.prototype.preapareData = function () {
+   // Base
+   var chart = this;
+ 
+   // Global Variables
+   chart.itemsNum = chart.data.length;
+   chart.maxValue = Math.max.apply(null, chart.values);
+   chart.minValue = Math.min.apply(null, chart.values);
+ 
+   // Axis Specifications
+   chart.verticalAxisWidth = chart.height - 2 * chart.verticalMargin; // bottom and top margins
+   chart.horizontalAxisWidth = chart.width - 2 * chart.horizontalMargin // left and right margins
+ 
+   // Label Specifications
+   chart.verticalUpperBound = Math.ceil(chart.maxValue / 10) * 10;
+   chart.verticalLabelFreq = chart.verticalUpperBound / chart.itemsNum;
+   chart.horizontalLabelFreq = chart.horizontalAxisWidth / chart.itemsNum;
+ };
+ 
+ BarChart.prototype.drawChart = function () {
+   // Base
+   var chart = this;
+ 
+   // Vertical Axis
+   chart.drawVerticalAxis();
+ 
+   // Vertical Labels
+   chart.drawVerticalLabels();
+ 
+   // Horizontal Axis
+   chart.drawHorizontalAxis();
+ 
+   // Horizontal Labels
+   chart.drawHorizontalLabels();
+ 
+   // Horizontal Guidelines
+   chart.drawHorizontalGuidelines();
+ 
+   // Vertical Guidelines
+   chart.drawVerticalGuidelines();
 
-};
+   chart.drawBars();
+ 
+ };
+ 
+ BarChart.prototype.drawVerticalAxis = function () {
+   // Base
+   var chart = this;
+ 
+   // Vertical Axis
+   chart.context.beginPath();
+   chart.context.strokeStyle = chart.axisColor;
+   chart.context.lineWidth = chart.axisWidth;
+   chart.context.moveTo(chart.horizontalMargin, chart.verticalMargin);
+   chart.context.lineTo(chart.horizontalMargin, chart.height - chart.verticalMargin);
+   chart.context.stroke();
+ };
+ 
+ BarChart.prototype.drawVerticalLabels = function () {
+   // Base
+   var chart = this;
+ 
+   // Text Specifications
+   var labelFont = chart.fontStyle + ' ' + chart.fontWeight + ' ' + chart.verticalFontSize + 'px ' + chart.fontFamily;
+   chart.context.font = labelFont;
+   chart.context.textAlign = 'right';
+   chart.context.fillStyle = chart.fontColor;
+ 
+   // Scale Values
+   var scaledVerticalLabelFreq = (chart.verticalAxisWidth / chart.verticalUpperBound) * chart.verticalLabelFreq;
+ 
+   // Draw labels
+   for(var i = 0; i <= chart.itemsNum; i++){
+     var labelText = chart.verticalUpperBound - i * chart.verticalLabelFreq;
+     var verticalLabelX = chart.horizontalMargin - chart.horizontalMargin / chart.axisRatio;
+     var verticalLabelY = chart.verticalMargin + i * scaledVerticalLabelFreq;
+ 
+     chart.context.fillText(labelText, verticalLabelX, verticalLabelY);
+   }
+ };
+ 
+ BarChart.prototype.drawHorizontalAxis = function () {
+   // Base
+   var chart = this;
+ 
+   // Horizontal Axis
+   chart.context.beginPath();
+   chart.context.strokeStyle = chart.axisColor;
+   chart.context.lineWidth = chart.axisWidth;
+   chart.context.moveTo(chart.horizontalMargin, chart.height - chart.verticalMargin);
+   chart.context.lineTo(chart.width - chart.horizontalMargin, chart.height - chart.verticalMargin);
+   chart.context.stroke();
+ };
+ 
+ BarChart.prototype.drawHorizontalLabels = function () {
+   // Base
+   var chart = this;
+ 
+   // Text Specifications
+   var labelFont = chart.fontStyle + ' ' + chart.fontWeight + ' ' + chart.verticalFontSize + 'px ' + chart.fontFamily;
+   chart.context.font = labelFont;
+   chart.context.textAlign = 'center';
+   chart.context.textBaseline = 'top';
+   chart.context.fillStyle = chart.fontColor;
+ 
+   // Draw Labels
+   for(var i = 0; i < chart.itemsNum; i++){
+     var horizontalLabelX = chart.horizontalMargin + i * chart.horizontalLabelFreq + chart.horizontalLabelFreq / 2;
+     var horizontalLabelY = chart.height - chart.verticalMargin + chart.verticalMargin / chart.axisRatio;
+ 
+     chart.context.fillText(chart.labels[i], horizontalLabelX, horizontalLabelY);
+   }
+ };
+ 
+ BarChart.prototype.drawHorizontalGuidelines = function () {
+   // Base
+   var chart = this;
+ 
+   // Specifications
+   chart.context.strokeStyle = chart.guidelineColor;
+   chart.context.lineWidth = chart.guidelineWidth;
+ 
+   // Scale Values
+   var scaledVerticalLabelFreq = (chart.verticalAxisWidth / chart.verticalUpperBound) * chart.verticalLabelFreq;
+ 
+   // Draw labels
+   for(var i = 0; i <= chart.itemsNum; i++){
+     // Starting point coordinates
+     var horizontalGuidelineStartX = chart.horizontalMargin;
+     var horizontalGuidelineStartY = chart.verticalMargin + i * scaledVerticalLabelFreq;
+ 
+     // End point coordinates
+     var horizontalGuidelineEndX = chart.horizontalMargin + chart.horizontalAxisWidth;
+     var horizontalGuidelineEndY = chart.verticalMargin + i * scaledVerticalLabelFreq;
+ 
+     chart.context.beginPath();
+     chart.context.moveTo(horizontalGuidelineStartX, horizontalGuidelineStartY);
+     chart.context.lineTo(horizontalGuidelineEndX, horizontalGuidelineEndY);
+     chart.context.stroke();
+   }
+ };
+ 
+ BarChart.prototype.drawVerticalGuidelines = function () {
+   // Base
+   var chart = this;
+ 
+   // Specifications
+   chart.context.strokeStyle = chart.guidelineColor;
+   chart.context.lineWidth = chart.guidelineWidth;
+ 
+   // Draw Labels
+   for(var i = 0; i <= chart.itemsNum; i++){
+     // Starting point coordinates
+     var verticalGuidelineStartX = chart.horizontalMargin + i * chart.horizontalLabelFreq;
+     var verticalGuidelineStartY = chart.height - chart.verticalMargin;
+ 
+     // End point coordinates
+     var verticalGuidelineEndX = chart.horizontalMargin + i * chart.horizontalLabelFreq;
+     var verticalGuidelineEndY = chart.verticalMargin;
+ 
+     chart.context.beginPath();
+     chart.context.moveTo(verticalGuidelineStartX, verticalGuidelineStartY);
+     chart.context.lineTo(verticalGuidelineEndX, verticalGuidelineEndY);
+     chart.context.stroke();
+ 
+   }
+ };
 
-BarChart.prototype.setCanvasParameters = function(targetId, width, height, data) {
-    // Canvas specifications come from outside
-    var chart = this;
-    chart.id = targetId;
-    chart.width = width;
-    chart.height = height;
-    chart.data = data;
-};
+ BarChart.prototype.drawBars = function () {
+     var chart = this;
+     
+     for(var i = 0; i <= chart.itemsNum; i++){
+        var {red, green, blue} = chart.createRandomRGBColor();
+        var fillOpacity = 0.3;
+        var fillColor = `rgba(${red}, ${green}, ${blue}, ${fillOpacity})`
+        var borderColor = `rgba(${red}, ${green}, ${blue})`
+        chart.context.beginPath();
+        chart.context.fillStyle = fillColor;
+        chart.context.strokeStyle = borderColor;
 
-BarChart.prototype.setChartParameters = function() {
-    var chart = this;
-    chart.axeRatio = 10; // in terms of percentage
-    chart.verticalMargin = (chart.height * chart.axeRatio) / 100;
-    chart.horizontalMargin = (chart.width * chart.axeRatio) / 100;
-    chart.axeColor = "#b1b1b1";
-    chart.axeWidth = 0.75;
+        var barX = chart.horizontalMargin + i * chart.horizontalLabelFreq + chart.horizontalLabelFreq / chart.axisRatio;
+        var barY = chart.height - chart.verticalMargin;
+        var barWidth = chart.horizontalLabelFreq - 2 * chart.horizontalLabelFreq / chart.axisRatio;
+        var barHeight = -1 * chart.verticalAxisWidth * chart.values[i] / chart.maxValue;
+        chart.context.rect(barX, barY, barWidth, barHeight)
+        chart.context.stroke();
+        chart.context.fill();
+    }
+ }
 
-    // Label Configurations
-    chart.fontRatio = 3; // in terms of percentage
-    chart.fontFamily = 'times';
-    chart.fontStyle = 'normal';
-    chart.fontWeight = '300';
-    chart.fontColor = '#666';
-    chart.verticalFontSize = (chart.height * chart.fontRatio) / 100;
-    chart.horizontalFontSize = (chart.width * chart.fontRatio) / 100;
+ BarChart.prototype.createRandomRGBColor = function () {
+    var red = getRandomInt(0, 257)
+    var green = getRandomInt(0, 257)
+    var blue = getRandomInt(0, 257)
+    return {red, green, blue}
+ }
 
-    // Guideline Configurations
-    chart.guidelineColor = "#e5e5e5";
-    chart.guidelineWidth = 0.5;
-};
-
-BarChart.prototype.performPreOperations = function () {
-    var chart = this;
-    // Create Canvas
-    chart.createCanvas();
-    chart.handleData();
-    chart.prepareData();
-};
-
-BarChart.prototype.createCanvas = function() {
-    // Base
-    var chart = this;
-
-    // Create Canvas
-    var canvas  = document.createElement('canvas')
-    canvas.id = chart.id + '-' + Math.random();
-    canvas.width = chart.width;
-    canvas.height = chart.height;
-    // Append canvas to tarrget container
-    document.getElementById("chart").innerHTML = ""; // clean container
-    document.getElementById("chart").appendChild(canvas) // add canvas to clean container
-    // Add chart to canvas
-    chart.canvas = canvas
-    chart.context = canvas.getContext("2d")
-}
-
-BarChart.prototype.handleData = function() {
-    var chart = this;
-
-    // Data Sets
-    chart.labels = [];
-    chart.values = [];
-
-    chart.data.forEach(item => {
-        chart.labels.push(item.label);
-        chart.values.push(item.value);
-    }) 
-}
-
-BarChart.prototype.prepareData = function () {
-    var chart = this;
-
-    // Global Variables
-    chart.itemsNum = chart.data.length;
-    chart.maxValue = Math.max.apply(null, chart.values);
-    chart.minValue = Math.min.apply(null, chart.values);
-
-    // Axe Specifications
-    chart.verticalAxeWidth = chart.height - 2 * chart.verticalMargin;
-    chart.horizontalAxeWidth = chart.width - 2 * chart.horizontalMargin;
-
-    // Label specifications
-    chart.verticalUpperBound = Math.ceil(chart.maxValue / 10) * 10;
-    chart.labelFrequency = chart.verticalUpperBound / chart.itemsNum;
-    chart.horizontalLabelFrequency = chart.horizontalAxeWidth / chart.itemsNum;
-    console.log(chart)
-}
+ function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
+  }
